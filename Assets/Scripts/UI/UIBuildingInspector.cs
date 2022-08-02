@@ -10,6 +10,8 @@ public class UIBuildingInspector : MonoBehaviour
 
     public void inspectBuilding(Building building)
     {
+        if (inspectedBuilding != null) uninspect();
+
         // Inspect a new building
         gameObject.SetActive(true);
         inspectedBuilding = building;

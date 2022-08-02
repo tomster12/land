@@ -41,12 +41,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 8144146702277504617}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf97bc8ce8be0324cb123ab71b4ce8cd, type: 3}
+  m_Script: {fileID: 11500000, guid: f38236001a2146c4488f2632670c7094, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  obstructShapeWidth: 2
-  obstructShapeHeight: 2
-  obstructData: 01000000010000000100000001000000
+  shapeShapeWidth: 2
+  shapeShapeHeight: 2
+  shapeData: 01000000010000000100000001000000
 --- !u!1001 &8144146703470334226
 PrefabInstance:
   m_ObjectHideFlags: 0

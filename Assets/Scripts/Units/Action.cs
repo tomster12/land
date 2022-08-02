@@ -25,12 +25,28 @@ public abstract class Action
     public virtual void update()
     {
         // Handle reliant action
-        if (reliantAction != null && reliantAction.state == ActionState.FAILED_RESOLVED) { state = ActionState.FAILED; onUpdated(); return; }
+        if (state == ActionState.CURRENT && reliantAction != null)
+        {
+            if (reliantAction.state == ActionState.FAILED_RESOLVED) setState(ActionState.FAILED);
+        }
     }
 
 
+    public void setState(ActionState state_)
+    {
+        // Set state and call onUpdated
+        if (state != state_)
+        {
+            state = state_;
+            onUpdated();
+        }
+    }
+
     public virtual void setReliant(Action reliantAction_) => reliantAction = reliantAction_;
+    
     public virtual ActionState getState() => state;
+
+
     public abstract void resolve();
 }
 
@@ -49,30 +65,61 @@ public class ActionQueue : Action
     public override void update()
     {
         base.update();
-        if (state != ActionState.CURRENT) { return; }
+        if (state != ActionState.CURRENT) return;
 
         // Complete when empty
-        if (actions.Count == 0) { state = ActionState.COMPLETED; onUpdated(); return; }
-
-        // Update top action
-        actions[0].update();
-        if (actions[0].getState() == ActionState.COMPLETED) { actions.RemoveAt(0); onUpdated(); return; }
-        else if (actions[0].getState() == ActionState.FAILED) { actions[0].resolve(); return; }
-        else if (actions[0].getState() == ActionState.FAILED_RESOLVED) { actions.RemoveAt(0); onUpdated(); return; }
+        if (actions.Count == 0)
+        {
+            setState(ActionState.COMPLETED);
+        }
+        
+        // Update action when not empty
+        else
+        {
+            actions[0].update();
+            if (actions[0].getState() == ActionState.COMPLETED) dequeue();
+            else if (actions[0].getState() == ActionState.FAILED) actions[0].resolve();
+            else if (actions[0].getState() == ActionState.FAILED_RESOLVED) dequeue();
+        }
     }
 
+
+    public void dequeue()
+    {
+        // Remove first action
+        if (actions.Count == 0) return;
+        actions.RemoveAt(0);
+        onUpdated();
+    }
 
     public void enqueue(Action action)
     {
         // Add a new action to the queue
         if (state == ActionState.FAILED) return;
-        state = ActionState.CURRENT;
+        setState(ActionState.CURRENT);
         actions.Add(action);
         onUpdated();
     }
 
-    public void enqueueBefore(Action action) { actions.Insert(0, action); onUpdated(); }
-    public void enqueueAfter(Action action) { actions.Insert(1, action); onUpdated(); }
+    public void enqueueBefore(Action reference, Action action)
+    {
+        // Add a new action before a reference action
+        int index = actions.IndexOf(reference);
+        if (index == -1) return;
+        setState(ActionState.CURRENT);
+        actions.Insert(index, action);
+        onUpdated();
+    }
+
+    public void enqueueAfter(Action reference, Action action)
+    {
+        // Add a new action after a reference action
+        int index = actions.IndexOf(reference);
+        if (index == -1) return;
+        setState(ActionState.CURRENT);
+        actions.Insert(index + 1, action);
+        onUpdated();
+    }
 
 
     public override void resolve() { }
@@ -105,12 +152,12 @@ public class PathfindAction : Action
         base.update();
         if (state != ActionState.CURRENT) return;
 
-        // Check if in building
+        // Exit if in building
         if (unit.currentBuilding != null)
         {
             Action exitAction = new ExitBuildingAction(parentQueue, unit, unit.currentBuilding);
             setReliant(exitAction);
-            parentQueue.enqueueBefore(exitAction);
+            parentQueue.enqueueBefore(this, exitAction);
             return;
         }
 
@@ -125,20 +172,21 @@ public class PathfindAction : Action
         // Pathfind to target node
         Node currentNode = unit.currentNode;
         path = NodeGrid.instance.pathfind(currentNode, targetNode);
+        onUpdated();
 
         // Deal with path possibilities
-        if (path == null) state = ActionState.FAILED;
-        else if (path.Count == 0) state = ActionState.COMPLETED;
+        if (path == null) setState(ActionState.FAILED);
+        else if (path.Count == 0) setState(ActionState.COMPLETED);
     }
 
 
     private void followPath()
     {
         // Reached the end so complete
-        if (path.Count == 0) { state = ActionState.COMPLETED; return; }
+        if (path.Count == 0) { setState(ActionState.COMPLETED); return; }
 
         // Need to repathfind because blocked
-        if (!path[0].active) { path = null; return; }
+        if (!path[0].active) { path = null; onUpdated(); return; }
 
         // Move towards first in list
         Vector3 target = path[0].getCentre();
@@ -175,7 +223,7 @@ public class GotoPositionAction : Action
 
         // Move towards position
         bool reached = unit.moveTowards(targetPos);
-        if (reached) { state = ActionState.COMPLETED; }
+        if (reached) setState(ActionState.COMPLETED);
     }
 
 
@@ -207,9 +255,9 @@ public class EnterBuildingAction : Action
         if (state != ActionState.CURRENT) return;
         
         // Entered building
-        if (unit.currentBuilding == targetBuilding) { state = ActionState.COMPLETED; return; }
+        if (unit.currentBuilding == targetBuilding) { setState(ActionState.COMPLETED); return; }
 
-        // Moved into building
+        // Moved into building - reliant action has completed
         if (enteringAction != null) { unit.enterBuilding(targetBuilding); return; }
 
         // Exit current building if in one
@@ -217,8 +265,8 @@ public class EnterBuildingAction : Action
         {
             Action exitAction = new ExitBuildingAction(parentQueue, unit, unit.currentBuilding);
             setReliant(exitAction);
-            parentQueue.enqueueBefore(exitAction);
-            return;
+            parentQueue.enqueueBefore(this, exitAction);
+            onUpdated();
         }
 
         // Create pathfinding action first
@@ -226,8 +274,8 @@ public class EnterBuildingAction : Action
         {
             Action pathfindAction = new PathfindAction(parentQueue, unit, targetBuilding.entranceNode);
             setReliant(pathfindAction);
-            parentQueue.enqueueBefore(pathfindAction);
-            return;
+            parentQueue.enqueueBefore(this, pathfindAction);
+            onUpdated();
         }
 
         // Enter building
@@ -235,8 +283,8 @@ public class EnterBuildingAction : Action
         {
             enteringAction = new GotoPositionAction(parentQueue, unit, targetBuilding.entranceTarget);
             setReliant(enteringAction);
-            parentQueue.enqueueBefore(enteringAction);
-            return;
+            parentQueue.enqueueBefore(this, enteringAction);
+            onUpdated();
         }
     }
 
@@ -274,15 +322,14 @@ public class ExitBuildingAction : Action
             unit.exitBuilding(targetBuilding);
             Action gotoPosAction = new GotoPositionAction(parentQueue, unit, targetBuilding.exitNode.getCentre());
             setReliant(gotoPosAction);
-            parentQueue.enqueueBefore(gotoPosAction);
-            return;
+            parentQueue.enqueueBefore(this, gotoPosAction);
+            onUpdated();
         }
 
         // Complete if not in building
         if (unit.currentBuilding != targetBuilding)
         {
-            state = ActionState.COMPLETED;
-            return;
+            setState(ActionState.COMPLETED);
         }
     }
 

@@ -44,13 +44,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09b4bd5145f96d948b9be5474ab6c940, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  obstructShapeWidth: 4
-  obstructShapeHeight: 4
-  obstructData: 01000000010000000100000001000000010000000100000001000000010000000100000001000000000000000000000001000000010000000000000000000000
+  shapeShapeWidth: 4
+  shapeShapeHeight: 4
+  shapeData: 01000000010000000100000001000000010000000100000001000000010000000100000001000000000000000000000001000000010000000000000000000000
   entranceOffset: {x: 3, y: 0, z: 2}
   entranceTargetOffset: {x: 0, y: 0, z: -1}
   exitOffset: {x: 0, y: 0, z: 4}
   exitTargetOffset: {x: 0, y: 0, z: -1}
+  unitsInside: []
 --- !u!1001 &3266685230080864911
 PrefabInstance:
   m_ObjectHideFlags: 0

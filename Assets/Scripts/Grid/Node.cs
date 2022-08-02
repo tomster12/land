@@ -38,14 +38,14 @@ public class Node : MonoBehaviour
     public void unitExit() => unitCount--;
 
 
-    public void obstruct()
+    public void block()
     {
         // Node becomes blocked
         blocked = true;
         setActive(false);
     }
 
-    public void unobstruct()
+    public void unblock()
     {
         // Node becomes unblocked
         blocked = false;

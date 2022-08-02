@@ -42,8 +42,8 @@ public class UIInspector : MonoBehaviour
     {
         // Uninspect all inspectors
         gameObject.SetActive(false);
-        unitInspector.uninspect();
-        buildingInspector.uninspect();
+        if (inspectingState == InspectingState.UNIT) unitInspector.uninspect();
+        else if (inspectingState == InspectingState.BUILDING) buildingInspector.uninspect();
         inspectingState = InspectingState.NONE;
     }
 }

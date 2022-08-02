@@ -1,10 +1,9 @@
 
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 
-public class Building : Obstruction
+public class Building : NodeObject
 {
 
     // Declare config, variables
@@ -27,8 +26,8 @@ public class Building : Obstruction
 
     private void placeBuilding()
     {
-        // Obstruct space
-        obstruct();
+        // Block space
+        placeObject();
 
         // Initialize entrance / exit nodes
         Vector3Int entrancePos = Vector3Int.FloorToInt(baseGridPos + transform.rotation * entranceOffset);
@@ -41,7 +40,7 @@ public class Building : Obstruction
     }
 
 
-    private void unplaceBuilding() => unobstruct();
+    private void unplaceBuilding() => unplaceObject();
 
 
     public void unitEnter(Unit unit) => unitsInside.Add(unit);

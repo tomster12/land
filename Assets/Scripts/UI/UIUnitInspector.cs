@@ -12,6 +12,8 @@ public class UIUnitInspector : MonoBehaviour
 
     public void inspectUnit(Unit unit)
     {
+        if (inspectedUnit != null) uninspect();
+
         // Inspect a new unit
         actionQueueInspector.inspectActionQueue(unit.getQueue());
         inspectedUnit = unit;
@@ -24,7 +26,7 @@ public class UIUnitInspector : MonoBehaviour
     {
         // Uninspect current unit
         gameObject.SetActive(false);
-        inspectedUnit.GetComponent<Outline>().enabled = false;
+        if (inspectedUnit != null) inspectedUnit.GetComponent<Outline>().enabled = false;
         actionQueueInspector.uninspect();
         inspectedUnit = null;
     }
